@@ -5,6 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { HomePage } from "@/app/HomePage";
+import { LoginPage } from "@/app/login/LoginPage";
+import { SignupPage } from "@/app/signup/SignupPage";
+import { DashboardPage } from "@/app/dashboard/DashboardPage";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { useLoading } from "@/hooks/useLoading";
 
 const queryClient = new QueryClient();
@@ -13,20 +17,27 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/signup" component={SignupPage} />
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <DashboardPage />
+        </ProtectedRoute>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function AppWithLoading() {
-  const { isLoading, progress } = useLoading({ duration: 2800 });
+  const { isLoading, progress } = useLoading({ duration: 2200 });
 
   return (
     <>
       <LoadingScreen
         isVisible={isLoading}
         progress={progress}
-        brandName="LUXE"
+        brandName="MENULUX"
         tagline="Crafted for the Extraordinary"
       />
       {!isLoading && (
