@@ -1,6 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { getMyRestaurant } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
+import type { Subscription } from "./billing/BillingPage";
 
 export interface NavItem {
   icon: string;
@@ -15,12 +19,18 @@ const NAV_ITEMS: NavItem[] = [
   { icon: "▶", label: "Videos", href: "/dashboard/videos" },
   { icon: "◻", label: "QR Codes", href: "/dashboard/qr" },
   { icon: "◇", label: "Analytics", href: "/dashboard/analytics" },
-  { icon: "◆", label: "Settings", href: "/dashboard/settings" },
+  { icon: "◆", label: "Billing", href: "/dashboard/billing" },
 ];
 
 const BOTTOM_ITEMS: NavItem[] = [
   { icon: "?", label: "Help & Docs", href: "/dashboard/help" },
 ];
+
+const PLAN_CONFIG = {
+  free: { label: "Free Plan", color: "rgba(212,175,55,0.12)", textColor: "rgba(212,175,55,0.5)", upgrade: true },
+  pro: { label: "Pro Plan", color: "linear-gradient(135deg, rgba(100,80,200,0.3), rgba(130,110,220,0.3))", textColor: "#8a7aed", upgrade: false },
+  premium: { label: "Premium", color: "linear-gradient(135deg, rgba(160,120,48,0.3), rgba(212,175,55,0.3))", textColor: "#d4af37", upgrade: false },
+};
 
 interface SidebarContentProps {
   onClose?: () => void;
@@ -32,6 +42,28 @@ export function SidebarContent({ onClose }: SidebarContentProps) {
   const restaurantName = (user?.user_metadata?.restaurant_name as string) || "Your Restaurant";
   const email = user?.email ?? "";
   const initials = restaurantName.slice(0, 2).toUpperCase();
+
+  const { data: restaurant } = useQuery({
+    queryKey: ["my-restaurant"],
+    queryFn: getMyRestaurant,
+  });
+
+  const { data: subscription } = useQuery({
+    queryKey: ["subscription", restaurant?.id],
+    queryFn: async () => {
+      if (!restaurant?.id) return null;
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("restaurant_id", restaurant.id)
+        .maybeSingle();
+      return data as Subscription | null;
+    },
+    enabled: !!restaurant?.id,
+  });
+
+  const currentPlan = (subscription?.plan ?? "free") as "free" | "pro" | "premium";
+  const planConfig = PLAN_CONFIG[currentPlan];
 
   function go(href: string) {
     navigate(href);
@@ -63,9 +95,7 @@ export function SidebarContent({ onClose }: SidebarContentProps) {
 
       {/* Restaurant badge */}
       <div className="px-4 mb-6">
-        <div
-          className="glass-gold rounded-sm px-3 py-2.5 flex items-center gap-3"
-        >
+        <div className="glass-gold rounded-sm px-3 py-2.5 flex items-center gap-3">
           <div
             className="w-8 h-8 rounded-sm flex items-center justify-center text-xs font-bold flex-shrink-0"
             style={{
@@ -191,36 +221,55 @@ export function SidebarContent({ onClose }: SidebarContentProps) {
           </button>
         ))}
 
-        {/* Plan badge */}
-        <div
-          className="mt-3 mx-0 px-3 py-2 glass border-gold-gradient rounded-sm flex items-center justify-between"
+        {/* Dynamic Plan badge */}
+        <button
+          onClick={() => go("/dashboard/billing")}
+          className="mt-3 w-full px-3 py-2 glass border-gold-gradient rounded-sm flex items-center justify-between transition-all duration-300 hover:glass-gold"
         >
           <div>
             <div
               className="text-[10px] font-semibold tracking-wide"
-              style={{ color: "rgba(212,175,55,0.7)", fontFamily: "'Inter', sans-serif" }}
+              style={{ color: planConfig.textColor, fontFamily: "'Inter', sans-serif" }}
             >
-              Free Plan
+              {planConfig.label}
             </div>
             <div
               className="text-[9px]"
               style={{ color: "rgba(212,175,55,0.3)", fontFamily: "'Inter', sans-serif" }}
             >
-              Upgrade for more
+              {planConfig.upgrade ? "Upgrade for more" : "Active subscription"}
             </div>
           </div>
-          <button
-            className="text-[9px] tracking-wide px-2 py-1 rounded-sm transition-all duration-200 hover:glow-gold-sm"
-            style={{
-              background: "linear-gradient(135deg, #a07830, #d4af37, #f0d080)",
-              color: "hsl(0 0% 4%)",
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 600,
-            }}
-          >
-            Pro
-          </button>
-        </div>
+          {planConfig.upgrade && (
+            <span
+              className="text-[9px] tracking-wide px-2 py-1 rounded-sm transition-all duration-200 hover:glow-gold-sm flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #a07830, #d4af37, #f0d080)",
+                color: "hsl(0 0% 4%)",
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 600,
+              }}
+            >
+              Pro
+            </span>
+          )}
+          {!planConfig.upgrade && (
+            <span
+              className="text-[9px] tracking-wide px-2 py-1 rounded-sm flex-shrink-0"
+              style={{
+                background: currentPlan === "premium"
+                  ? "linear-gradient(135deg, #a07830, #d4af37)"
+                  : "rgba(138,122,237,0.2)",
+                color: currentPlan === "premium" ? "hsl(0 0% 4%)" : "#8a7aed",
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 600,
+                border: `1px solid ${currentPlan === "premium" ? "transparent" : "rgba(138,122,237,0.3)"}`,
+              }}
+            >
+              {currentPlan === "premium" ? "★" : "◆"}
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );

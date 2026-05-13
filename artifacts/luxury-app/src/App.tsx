@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ToastProvider } from "@/components/ui/LuxToast";
 import NotFound from "@/pages/not-found";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { HomePage } from "@/app/HomePage";
 import { LoginPage } from "@/app/login/LoginPage";
 import { SignupPage } from "@/app/signup/SignupPage";
@@ -12,13 +13,49 @@ import { DashboardPage } from "@/app/dashboard/DashboardPage";
 import { SetupPage } from "@/app/dashboard/setup/SetupPage";
 import { MenuPage } from "@/app/dashboard/menus/MenuPage";
 import { VideosPage } from "@/app/dashboard/videos/VideosPage";
+import { QRPage } from "@/app/dashboard/qr/QRPage";
+import { AnalyticsPage } from "@/app/dashboard/analytics/AnalyticsPage";
+import { BillingPage } from "@/app/dashboard/billing/BillingPage";
 import { DashboardLayout } from "@/app/dashboard/DashboardLayout";
 import { RestaurantPage } from "@/app/restaurant/RestaurantPage";
 import { ReelsPage } from "@/app/restaurant/ReelsPage";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { useLoading } from "@/hooks/useLoading";
+import { AnimatePresence, motion } from "framer-motion";
+import { useLocation } from "wouter";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,
+      retry: 1,
+    },
+  },
+});
+
+const pageVariants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  exit: { opacity: 0, y: -6, transition: { duration: 0.2 } },
+};
+
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className="h-full"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 function Router() {
   return (
@@ -40,21 +77,42 @@ function Router() {
       <Route path="/dashboard/menu">
         <ProtectedRoute>
           <DashboardLayout>
-            <MenuPage />
+            <PageTransition><MenuPage /></PageTransition>
           </DashboardLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/dashboard/videos">
         <ProtectedRoute>
           <DashboardLayout>
-            <VideosPage />
+            <PageTransition><VideosPage /></PageTransition>
+          </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/qr">
+        <ProtectedRoute>
+          <DashboardLayout>
+            <PageTransition><QRPage /></PageTransition>
+          </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/analytics">
+        <ProtectedRoute>
+          <DashboardLayout>
+            <PageTransition><AnalyticsPage /></PageTransition>
+          </DashboardLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/dashboard/billing">
+        <ProtectedRoute>
+          <DashboardLayout>
+            <PageTransition><BillingPage /></PageTransition>
           </DashboardLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/dashboard">
         <ProtectedRoute>
           <DashboardLayout>
-            <DashboardPage />
+            <PageTransition><DashboardPage /></PageTransition>
           </DashboardLayout>
         </ProtectedRoute>
       </Route>
@@ -86,14 +144,16 @@ function AppWithLoading() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ToastProvider>
-          <AppWithLoading />
-          <Toaster />
-        </ToastProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ToastProvider>
+            <AppWithLoading />
+            <Toaster />
+          </ToastProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
