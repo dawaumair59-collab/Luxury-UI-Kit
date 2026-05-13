@@ -11,10 +11,10 @@ export interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { icon: "⬡", label: "Overview", href: "/dashboard" },
-  { icon: "◈", label: "Menus", href: "/dashboard/menus", badge: "1" },
+  { icon: "◈", label: "Menu", href: "/dashboard/menu" },
+  { icon: "▶", label: "Videos", href: "/dashboard/videos" },
   { icon: "◻", label: "QR Codes", href: "/dashboard/qr" },
   { icon: "◇", label: "Analytics", href: "/dashboard/analytics" },
-  { icon: "⟳", label: "Integrations", href: "/dashboard/integrations" },
   { icon: "◆", label: "Settings", href: "/dashboard/settings" },
 ];
 

@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { DashboardLayout } from "./DashboardLayout";
 
 const stagger = {
   animate: { transition: { staggerChildren: 0.08 } },
@@ -8,7 +7,7 @@ const stagger = {
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } },
 };
 
 const STATS = [
@@ -73,8 +72,7 @@ export function DashboardPage() {
   const restaurantName = (user?.user_metadata?.restaurant_name as string) || "Your Restaurant";
 
   return (
-    <DashboardLayout>
-      <div className="p-6 md:p-8 max-w-5xl">
+    <div className="p-6 md:p-8 max-w-5xl">
         {/* Welcome header */}
         <motion.div
           initial="initial"
@@ -337,8 +335,7 @@ export function DashboardPage() {
             ))}
           </div>
         </motion.div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
 }
 
